@@ -1,0 +1,62 @@
+using SFEW dataset 
+samples = 75
+train_model(model, SFEW_train_loader, args.epochs=15)
+train_model(model, train_loader, 10)
+
+Epoch 1/15 loss: 1.5847 avg. loss: 1.2054
+
+Epoch 2/15 loss: 0.2584 avg. loss: 0.8662
+
+Epoch 3/15 loss: 0.9814 avg. loss: 0.8728
+
+Epoch 4/15 loss: 2.0564 avg. loss: 0.7726
+
+Epoch 5/15 loss: 0.7607 avg. loss: 0.6324
+
+Epoch 6/15 loss: 0.3026 avg. loss: 0.5635
+
+Epoch 7/15 loss: 1.7457 avg. loss: 0.6058
+
+Epoch 8/15 loss: 0.2575 avg. loss: 0.5047
+
+Epoch 9/15 loss: 0.1228 avg. loss: 0.5060
+
+Epoch 10/15 loss: 0.7325 avg. loss: 0.5148
+
+Epoch 11/15 loss: 0.6012 avg. loss: 0.4300
+
+Epoch 12/15 loss: 0.0248 avg. loss: 0.3909
+
+Epoch 13/15 loss: 0.2630 avg. loss: 0.3557
+
+Epoch 14/15 loss: 1.1001 avg. loss: 0.3839
+
+Epoch 15/15 loss: 0.8656 avg. loss: 0.4609
+
+Epoch 1/10 loss: 0.3190 avg. loss: 0.6131
+
+Epoch 2/10 loss: 0.1721 avg. loss: 0.1935
+
+Epoch 3/10 loss: 0.2551 avg. loss: 0.1346
+
+Epoch 4/10 loss: 0.0557 avg. loss: 0.1113
+
+Epoch 5/10 loss: 0.0992 avg. loss: 0.0949
+
+Epoch 6/10 loss: 0.1069 avg. loss: 0.0857
+
+Epoch 7/10 loss: 0.0678 avg. loss: 0.0825
+
+Epoch 8/10 loss: 0.0367 avg. loss: 0.0736
+
+Epoch 9/10 loss: 0.0075 avg. loss: 0.0652
+
+Epoch 10/10 loss: 0.0615 avg. loss: 0.0659
+[[119   9   2   3   4   3   7]
+ [  6  25   0   4   4   1   2]
+ [  1   2  40  10  10   9  10]
+ [  4   1   2 553   5   3  14]
+ [  0   3   4   7 161   3  14]
+ [  4   2   3   5   3  61   1]
+ [  8   0   7  16  26   2 252]]
+The test accuracy of preVGG model is: 0.844

@@ -1,0 +1,15 @@
+input FER2013 data(fear, disgust, anger)
+
+
+samples = 50
+
+epoch = 20
+The number of samples is: 150
+[[ 83  14   6  18   5   2  19]
+ [  1  18   2  11   4   3   3]
+ [  0   1  43  16   5   5  12]
+ [  1   1   9 550   4   1  16]
+ [  0   2  18  26 117   2  27]
+ [  1   0  14  10   2  50   2]
+ [  2   0  11  33  25   1 239]]
+The test accuracy of VGG+TL_A model is: 0.767

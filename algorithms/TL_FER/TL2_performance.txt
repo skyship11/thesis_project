@@ -1,0 +1,20 @@
+use the balanced dataset
+
+FER2013 
+samples = 50
+
+epoch = 10
+[[ 96   6   5  17   6   2  15]
+ [  2  19   1  10   4   3   3]
+ [  0   0  45  15   7   5  10]
+ [  1   0   7 553   4   2  15]
+ [  0   2  17  24 129   3  17]
+ [  1   1  10  11   2  53   1]
+ [  2   0  14  26  39   1 229]]
+The test accuracy of VGG+TL_A2 model is: 0.783
+
+
+
+
+
+
