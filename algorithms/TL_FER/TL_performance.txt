@@ -1,10 +1,7 @@
 input FER2013 data(fear, disgust, anger)
 
-
 samples = 50
 
-epoch = 20
-The number of samples is: 150
 [[ 83  14   6  18   5   2  19]
  [  1  18   2  11   4   3   3]
  [  0   1  43  16   5   5  12]
