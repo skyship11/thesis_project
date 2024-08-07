@@ -1,5 +1,6 @@
-using SFEW dataset 
-samples = 75
+using SFEW dataset (fear, disgust, anger, samples = 75)
+then using RAF-DB
+
 train_model(model, SFEW_train_loader, args.epochs=15)
 train_model(model, train_loader, 10)
 
