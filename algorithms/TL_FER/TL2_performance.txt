@@ -1,9 +1,7 @@
-use the balanced dataset
+use the FER2013 dataset (all emotions)
 
-FER2013 
 samples = 50
 
-epoch = 10
 [[ 96   6   5  17   6   2  15]
  [  2  19   1  10   4   3   3]
  [  0   0  45  15   7   5  10]
