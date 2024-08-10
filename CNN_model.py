@@ -14,10 +14,10 @@ from PIL import Image
 import os
 from statsmodels.stats.contingency_tables import mcnemar
 
-
+# check the use of gpu
 print(torch.cuda.is_available())
 
-
+# plot settings
 SMALL_SIZE = 12
 MEDIUM_SIZE = 14
 BIGGER_SIZE = 16
@@ -34,7 +34,7 @@ fig_size=(7,6)
 title_font = {'size':BIGGER_SIZE, 'color':'black', 'weight':'normal'} # Bottom vertical alignment for more space
 
 
-
+# the function for setting up the random seed
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -43,10 +43,11 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+# calculate the accuracy between true label and prediction label
 def accuracy(target, pred):
     return metrics.accuracy_score(target.detach().cpu().numpy(), pred.detach().cpu().numpy())
 
-
+# get the confusion matrix
 def compute_confusion_matrix(target, pred, labels, normalize=None):
     return metrics.confusion_matrix(
         target.detach().cpu().numpy(),
@@ -56,7 +57,7 @@ def compute_confusion_matrix(target, pred, labels, normalize=None):
     )
 
 
-# set up a standard CNN model
+# set up the standard CNN model
 class Model(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
@@ -77,8 +78,7 @@ class Model(nn.Module):
         x = self.fc2(x)
         return x
 
-
-# set up a complex CNN model
+# set up a complex CNN model - VGG model
 class VGGNet(nn.Module):
     def __init__(self, num_classes):
         super(VGGNet, self).__init__()
@@ -144,7 +144,7 @@ class VGGNet(nn.Module):
             nn.Dropout(p=0.3)
         )
         # define fully connected layers
-        if args.basetype == 'TLmix' or args.basetype == 'TL_B':
+        if args.basetype == 'TL_B':
             self.classifier = nn.Sequential(
                 nn.Linear(512 * 4 * 4, 256),
                 nn.ReLU(inplace=True),
@@ -168,7 +168,7 @@ class VGGNet(nn.Module):
         x = self.classifier(x)
         return x
 
-
+# the function for training the CNN model
 def train(model, optimizer, epochs, device):
     model.train()
 
@@ -223,8 +223,8 @@ def train(model, optimizer, epochs, device):
 
     return train_accuracies, train_losses, val_accuracies, val_losses
 
-
-# get confusion matrices and test accuracy
+# the function for testing the model
+# get confusion matrix and test accuracy
 def test_model_performance():
     # Initialize the confusion matrix
     confusion_matrix = np.zeros((num_classes, num_classes))
@@ -353,6 +353,7 @@ def calculate_probabilities(data, attribute, labels):
     C = 7
     probabilities = {label: [] for label in labels}
 
+    # 'probabilities' is the fairness score for each group in every emotion
     for c in range(1, C + 1):
         for attr_value, label in zip(range(len(labels)), labels):
             if args.fairnesstype == 'equal':
@@ -401,10 +402,9 @@ def calculate_probabilities(data, attribute, labels):
     for idx, label in enumerate(labels):
         mean_class_accuracy = np.mean(probabilities[label])
         mean_class_accuracies[idx] = mean_class_accuracy
-        # print(f'The mean class-wise accuracy of {label} is : {mean_class_accuracy * 100:.1f}%')
         measure_value = np.sum(probabilities[label])
         F_measure.append(measure_value)
-
+    # 'F' is the fairness measure of a sensitive attribute
     if attribute == 'gender':
         ratio_1 = F_measure[0] / F_measure[1]
         ratio_2 = F_measure[1] / F_measure[0]
@@ -414,29 +414,28 @@ def calculate_probabilities(data, attribute, labels):
         F_values = F_measure / d_value
         F = min(F_values)
 
-    # print(f'The fairness of {args.fairnesstype} between different groups is: {F:.3f}')
-    # print('********************************')
+    '''
+    # plot the fairness between subgroups at the same attribute (like: compared male with female)
+    bar_width = 0.8 / len(labels)
+    index = np.arange(len(emotion_labels))
 
-    # # v1: plot the fairness between subgroups at the same attribute (like: compared male with female)
-    # bar_width = 0.8 / len(labels)
-    # index = np.arange(len(emotion_labels))
-    #
-    # fig, ax = plt.subplots(figsize=(10, 9))
-    #
-    # for i, label in enumerate(labels):
-    #     ax.bar(index + i * bar_width, probabilities[label], bar_width, label=label)
-    #
-    # ax.set_ylabel('Fairness score')
-    # ax.set_title(f'{title} for {attribute} using {args.basetype} model', fontdict=title_font)
-    # ax.set_xticks(index + bar_width * (len(labels) - 1) / 2)
-    # ax.set_xticklabels(emotion_labels, rotation=45)
-    # ax.legend()
-    # plt.savefig(f'fairness_figure/{args.basetype}_{args.fairnesstype}_fairness_{attribute}.pdf')
-    # plt.show()
+    fig, ax = plt.subplots(figsize=(10, 9))
+
+    for i, label in enumerate(labels):
+        ax.bar(index + i * bar_width, probabilities[label], bar_width, label=label)
+
+    ax.set_ylabel('Fairness score')
+    ax.set_title(f'{title} for {attribute} using {args.basetype} model', fontdict=title_font)
+    ax.set_xticks(index + bar_width * (len(labels) - 1) / 2)
+    ax.set_xticklabels(emotion_labels, rotation=45)
+    ax.legend()
+    plt.savefig(f'fairness_figure/{args.basetype}_{args.fairnesstype}_fairness_{attribute}.pdf')
+    plt.show()
+    '''
 
     return probabilities, mean_class_accuracies, F
 
-# get the samples from RAF-DB training data of other emotions except for fear, disgust, anger
+# get the samples from SFEW training data (images) in TL
 class CustomImageDataset(Dataset):
     def __init__(self, root, folder_indices, num_samples, transform=None):
         self.data = []
@@ -461,7 +460,7 @@ class CustomImageDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
 
-# get the filtered FER2013 dataset to retrain in TL
+# get the FER2013 dataset to retrain in TL
 class FER2013Dataset(Dataset):
     def __init__(self, data, transform=None):
         self.data = data
@@ -511,13 +510,13 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('mode', type=str, default='basetrain', choices=['basetrain', 'VGGtrain', 'plotcm', 'SMOTE', 'TL', 'TL2', 'TL_B', 'prediction', 'fairness', 'bias', 'twodataset', 'McNemar'], help='what to do when running the script (default: %(default)s)')
+    parser.add_argument('mode', type=str, default='basetrain', choices=['basetrain', 'VGGtrain', 'plotcm', 'SMOTE', 'TL', 'TL2', 'TL_B', 'prediction', 'fairness', 'bias', 'McNemar', 'twodataset'], help='what to do when running the script (default: %(default)s)')
     parser.add_argument('--model', type=str, default='model.pt', help='file to save model to or load model from (default: %(default)s)')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='torch device (default: %(default)s)')
     parser.add_argument('--batch-size', type=int, default=32, metavar='N', help='batch size for training (default: %(default)s)')
     parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train (default: %(default)s)')
     parser.add_argument('--lr', type=float, default=1e-4, metavar='V', help='learning rate for training (default: %(default)s)')
-    parser.add_argument('--basetype', type=str, default='Adam', choices=['Adam', 'VGG', 'VGG+SMOTE', 'TL', 'TL2', 'TL_B', 'TLmix'], help='model type (default: %(default)s)')
+    parser.add_argument('--basetype', type=str, default='Adam', choices=['Adam', 'VGG', 'VGG+SMOTE', 'TL', 'TL2', 'TL_B'], help='model type (default: %(default)s)')
     parser.add_argument('--fairnesstype', type=str, default='equal', choices=['equal', 'predictive', 'demographic'], help='fairness measure (default: %(default)s)')
     parser.add_argument('--datatype', type=str, default='FER', choices=['FER', 'SFEW'], help='dataset type for TL (default: %(default)s)')
 
@@ -527,10 +526,6 @@ if __name__ == "__main__":
         print(key, '=', value)
 
     device = args.device
-    # rafdb_data = pd.read_csv('rafdb_aligned.csv')
-    # img_size = 100  # original size of the image
-    # targetx = 128
-    # targety = 128
 
     # training data augmentation
     train_transform = transforms.Compose([
@@ -597,13 +592,13 @@ if __name__ == "__main__":
     emotion_labels = [emotion_map[i] for i in range(1, 8)]
 
     if args.mode == 'basetrain':
+        # this part is to train 30 standard CNN models
         # Initialize a list to store confusion matrices
         all_confusion_matrices = np.zeros((30, num_classes, num_classes))
         total_test_accuracy = []
 
         for i in range(30):
             set_seed(i)
-
             model = Model(num_classes).to(device)
 
             # train model with Adam optimizer
@@ -622,6 +617,7 @@ if __name__ == "__main__":
         np.save(f'algorithms/{args.basetype}_test_accuracy_{args.batch_size}_{args.epochs}_{args.lr}.npy', total_test_accuracy)
 
     elif args.mode == 'VGGtrain':
+        # this part is to train 30 VGG models
         # Initialize a list to store confusion matrices
         all_confusion_matrices = np.zeros((30, num_classes, num_classes))
         total_test_accuracy = []
@@ -648,6 +644,7 @@ if __name__ == "__main__":
         np.save(f'algorithms/{args.basetype}_test_accuracy_{args.batch_size}_{args.epochs}_{args.lr}.npy', total_test_accuracy)
 
     elif args.mode == 'plotcm':
+        # this part is to compare the performance of standard CNN model and VGG model
         model_name_list = ['Adam', 'VGG']
         diagonal_data = {}
 
@@ -680,6 +677,7 @@ if __name__ == "__main__":
         plt.show()
 
     elif args.mode == 'SMOTE':
+        # this part is to apply SMOTE method for the RAF-DB training dataset
         '''
         # apply SMOTE to increase the number of imbalanced dataset subgroups
         df = pd.read_csv('rafdb_train.csv')
@@ -749,32 +747,28 @@ if __name__ == "__main__":
         train_accuracies, train_losses, val_accuracies, val_losses = train(model, optimizer, args.epochs, device)
         torch.save(model.state_dict(), 'algorithms/VGG+SMOTE_model.pt')
 
-        # # Load the saved model file
-        # model = VGGNet(num_classes)
-        # model.load_state_dict(torch.load('algorithms/VGG+SMOTE_model.pt', map_location=torch.device(args.device)))
-        # model.to(device)
-
+        # evaluate the VGG+SMOTE model's performance
         normalized_cm = plot_cm('Smote')
 
     elif args.mode == 'TL':
-        # choose the best performance VGG model
+        # implement the VGG+TL-A1 model (only use fear, disgust, anger emotions for retraining)
+        # choose the best-performing VGG model
         total_test_accuracy = np.load('algorithms/VGG_test_accuracy_32_30_0.0001.npy', allow_pickle=True)
         max_test_accuracy = max(total_test_accuracy)
         max_index = list(total_test_accuracy).index(max_test_accuracy)
         print('The index of best performance VGG model is: ', max_index)  # 4
 
-        # Load the saved model file to test
+        # Load the saved model file
         model = VGGNet(num_classes)
         model.load_state_dict(
             torch.load(f'algorithms/VGG/VGG_model {max_index}_32_30_0.0001.pt', map_location=torch.device(args.device)))
         model.to(device)
 
-        # implement TL method
         # freeze the parameters of convolutional layers
         for param in model.features.parameters():
             param.requires_grad = False
 
-        # define the optimizer
+        # define the optimizer and only retrain in the fully connected layers
         optimizer = optim.Adam(model.classifier.parameters(), lr=0.0001)
 
         # choose the same number of emotion samples (i)
@@ -788,12 +782,12 @@ if __name__ == "__main__":
             SFEW_train_dataset = CustomImageDataset(root, folder_indices, num_samples, transform=train_transform)
             SFEW_train_loader = DataLoader(SFEW_train_dataset, batch_size=16, shuffle=True)
 
-            # retrain using the SFEW data in last layers (epoch=15/20)
+            # retrain using the filtered SFEW data in last layers
             train_model(model, SFEW_train_loader, args.epochs)
 
         elif args.datatype == 'FER':
             # load the filtered FER2013 data (only including three emotions fear, disgust, anger)
-            FERdata = pd.read_csv('fer_sampled.csv')
+            FERdata = pd.read_csv('fer2013_modified.csv')
             fear_data = FERdata[FERdata['emotion'] == 1]
             disgust_data = FERdata[FERdata['emotion'] == 2]
             anger_data = FERdata[FERdata['emotion'] == 5]
@@ -810,28 +804,28 @@ if __name__ == "__main__":
             train_model(model, fer_train_loader, args.epochs)
 
         torch.save(model.state_dict(), f'algorithms/TL_{args.datatype}/TL_model_{args.epochs}_{i}.pt')
-        # evaluate the model performance
+        # evaluate the model's performance
         normalized_cm = plot_cm('TL', i)
 
     elif args.mode == 'TL2':
-        # choose the best performance VGG model
+        # implement the VGG+TL-A2 model (use all emotions for retraining)
+        # choose the best-performing VGG model
         total_test_accuracy = np.load('algorithms/VGG_test_accuracy_32_30_0.0001.npy', allow_pickle=True)
         max_test_accuracy = max(total_test_accuracy)
         max_index = list(total_test_accuracy).index(max_test_accuracy)
         print('The index of best performance VGG model is: ', max_index)  # 4
 
-        # Load the saved model file to test
+        # Load the saved model file
         model = VGGNet(num_classes)
         model.load_state_dict(
             torch.load(f'algorithms/VGG/VGG_model {max_index}_32_30_0.0001.pt', map_location=torch.device(args.device)))
         model.to(device)
 
-        # implement TL method
         # freeze the parameters of convolutional layers
         for param in model.features.parameters():
             param.requires_grad = False
 
-        # define the optimizer
+        # define the optimizer and only retrain in fully connected layers
         optimizer = optim.Adam(model.classifier.parameters(), lr=0.0001)
 
         # make all emotions to have the same number of samples (i)
@@ -869,13 +863,15 @@ if __name__ == "__main__":
         normalized_cm = plot_cm('TL2')
 
     elif args.mode == 'TL_B':
+        # implement the VGG+TL-B model
+        # retrain the fear, disgust, anger emotions of dataset 2 first, then retrain RAF-DB
         # choose the best performance VGG model
         total_test_accuracy = np.load('algorithms/VGG_test_accuracy_32_30_0.0001.npy', allow_pickle=True)
         max_test_accuracy = max(total_test_accuracy)
         max_index = list(total_test_accuracy).index(max_test_accuracy)
         print('The index of best performance VGG model is: ', max_index)  # 4
 
-        # Load the saved model file to test
+        # Load the saved model file
         model = VGGNet(num_classes)
         model.load_state_dict(
             torch.load(f'algorithms/VGG/VGG_model {max_index}_32_30_0.0001.pt', map_location=torch.device(args.device)))
@@ -885,18 +881,18 @@ if __name__ == "__main__":
         for param in model.features.parameters():
             param.requires_grad = False
 
-        # the classifier of model
+        # modify the classifier of model
         model.classifier = nn.Sequential(
             nn.Linear(512 * 4 * 4, 256),
             nn.ReLU(inplace=True),
             nn.Linear(256, 7)
         )
         model.to(device)
-        # define the optimizer and train model
+        # define the optimizer and retrain in the fully connected layers
         optimizer = optim.Adam(model.classifier.parameters(), lr=0.0001)
 
         if args.datatype == 'SFEW':
-            # pre-trained VGG model (retrain the filtered SFEW first and then retrain RAF-DB data)
+            # based on pre-trained VGG model (retrain the filtered SFEW first and then retrain RAF-DB data)
             # get the same number of samples of fear, disgust, anger emotions from SFEW training dataset
             root = 'aligned/Train_Aligned_Faces'
             folder_indices = [2, 3, 6]  # here is the index of folders, not the true label which should be minus 1
@@ -911,7 +907,7 @@ if __name__ == "__main__":
             train_model(model, train_loader, 10)
 
         elif args.datatype == 'FER':
-            # pre-trained VGG model (retrain the filtered FER2013 first and then retrain RAF-DB data)
+            # based on pre-trained VGG model (retrain the filtered FER2013 first and then retrain RAF-DB data)
             # filtered FER2013 data includes three emotions fear, disgust, anger
             # each emotion has N(14388)/7 = 2055 samples
             FERdata = pd.read_csv('fer_sampled_v1.csv')
@@ -926,61 +922,10 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), f'algorithms/TL_{args.datatype}/TL_B_model_{args.epochs}.pt')
         # evaluate the model performance
         normalized_cm = plot_cm('TL_B')
-
-        '''
-        # implement experiment for TL method, use different number of emotions from FER2013
-        # for example, fear_number = 200, 400, ..., 2000, other emotions are same
-        # still use combined dataset (RAF-DB + FER2013)
-        FERdata = pd.read_csv('fer_sampled_v1.csv')
-        fear_data = FERdata[FERdata['emotion'] == 1]
-        anger_data = FERdata[FERdata['emotion'] == 5]
-        disgust_data = FERdata[FERdata['emotion'] == 2]
-
-        all_confusion_matrices = np.zeros((10, num_classes, num_classes))
-        counter = 0
-        total_test_accuracy = []
-
-        for i in range(200, 2001, 200):
-            sampled_fear = fear_data.sample(n=i, random_state=42)
-            sampled_anger = anger_data.sample(n=i, random_state=42)
-            sampled_disgust = disgust_data.sample(n=i, random_state=42)
-            combined_sample = pd.concat([sampled_fear, sampled_anger, sampled_disgust], ignore_index=True)
-
-            # combined dataset
-            if args.basetype == 'TLmix':
-                fer_train_dataset = FER2013Dataset(combined_sample, transform=train_transform)
-                fer_train_loader = DataLoader(fer_train_dataset, batch_size=32, shuffle=True)
-
-                train_model(model, fer_train_loader, args.epochs)
-                train_model(model, train_loader, args.epochs)
-
-                # # combine FER2013 and RAF-DB dataset
-                # combined_train_dataset = ConcatDataset([fer_train_dataset, train_dataset])
-                # train_loader = DataLoader(combined_train_dataset, batch_size=32, shuffle=True)
-                # train(model, optimizer, args.epochs, device)
-
-                torch.save(model.state_dict(), f'algorithms/TLmix/VGG+TLmix_{args.epochs}_{i}.pt')
-                cm, test_accuracy = test_model_performance()
-
-                all_confusion_matrices[counter] = cm
-                counter += 1
-                total_test_accuracy.append(test_accuracy)
-
-        np.save(f'algorithms/{args.basetype}/{args.basetype}_confusion_matrices_{args.epochs}.npy', all_confusion_matrices)
-        np.save(f'algorithms/{args.basetype}/{args.basetype}_test_accuracy_{args.epochs}.npy', total_test_accuracy)
-
         print('Finished')
-        '''
 
     elif args.mode == 'prediction':
-        # # get the file name of test_dataset
-        # test_image_paths = [test_dataset.dataset.imgs[idx][0] for idx in test_dataset.indices]
-        # test_image_names = [os.path.basename(path).split('/')[-1].split('\\')[-1] for path in test_image_paths]
-        # # test_image_info = rafdb_data[rafdb_data['Image'].isin(test_image_names)]
-        # # save new file for test images
-        # # test_image_info.to_csv('rafdb_test.csv', index=False)
-        # data = pd.read_csv('rafdb_test.csv')
-
+        # get the prediction emotion labels for the all models
         # use the total dataset of RAF-DB
         data = pd.read_csv('rafdb_aligned.csv')
 
@@ -1136,6 +1081,7 @@ if __name__ == "__main__":
         print('Finished')
 
     elif args.mode == 'fairness':
+        # this part is to plot the fairness comparison between different labels of a sensitive attribute
         gender_labels = ['Male', 'Female']
         race_labels = ['Cau', 'A-A', 'Asian']
         age_labels = ['0-3', '4-19', '20-39', '40-69', '70+']
@@ -1149,8 +1095,6 @@ if __name__ == "__main__":
             for i in range(30):
                 # using whole dataset
                 data = pd.read_csv(f'prediction_files/{model_name}_csv/rafdb_total_pred_{name} {i}.csv')
-                # # using test dataset
-                # test_data = data[data['Image'].str.contains('test')]
                 probabilities, mean_class_accuracies, F = calculate_probabilities(data, attribute, labels)
 
                 total_prob.append(probabilities)
@@ -1189,8 +1133,6 @@ if __name__ == "__main__":
                 data = pd.read_csv(f'prediction_files/rafdb_total_pred_{model_name}.csv')
             else:
                 data = pd.read_csv(f'prediction_files/rafdb_total_pred_VGG+{model_name}_{datatype}.csv')
-            # # using test dataset
-            # test_data = data[data['Image'].str.contains('test')]
             probabilities, mean_class_accuracies, F = calculate_probabilities(data, attribute, labels)
             mean_class_accuracies = np.round(mean_class_accuracies, 3)
 
@@ -1209,8 +1151,7 @@ if __name__ == "__main__":
             rects2 = ax.bar(x - 0.5 * width, mean_prob['VGG'][label], width,
                             yerr=np.abs(ci_prob['VGG'][label] - mean_prob['VGG'][label]), label='VGG', capsize=5)
             rects3 = ax.bar(x + 0.5 * width, mean_prob['VGG+SMOTE'][label], width, label='VGG+SMOTE')
-            # rects4 = ax.bar(x + width, mean_prob['TL-B with FER'][label], width, label='TL-B with FER', alpha=0.7, color='gold')
-            rects5 = ax.bar(x + 1.5 * width, mean_prob['TL-B with SFEW'][label], width, label='TL-B with SFEW', alpha=0.7, color='lightskyblue')
+            rects4 = ax.bar(x + 1.5 * width, mean_prob['TL-B with SFEW'][label], width, label='TL-B with SFEW', alpha=0.7, color='lightskyblue')
 
             ax.set_ylabel('Fairness score')
             ax.set_title(f'Equal opportunity comparison by models for {attribute}({label})', fontdict=title_font)
@@ -1231,14 +1172,12 @@ if __name__ == "__main__":
             mean_prob_baseline, ci_baseline, mean_class_accuracy_per_label_base, mean_F_base = fairness_score_normal('baseline', 'base', attribute, labels)
             mean_prob_VGG, ci_VGG, mean_class_accuracy_per_label_VGG, mean_F_VGG = fairness_score_normal('VGG', 'VGG', attribute, labels)
             prob_smote, mean_class_accuracies_smote, F_smote = fairness_score_advanced('VGG+SMOTE', attribute, labels)
-            # prob_TLB_FER, mean_class_accuracies_TLB_FER, F_TLB_FER = fairness_score_advanced('TL_B', attribute, labels, 'FER')
             prob_TLB_SFEW, mean_class_accuracies_TLB_SFEW, F_TLB_SFEW = fairness_score_advanced('TL_B', attribute, labels, 'SFEW')
 
             print(f'Sensitive attribute is: {attribute}')
             print(f'The standard CNN model: mean emotion class-wise accuracy: {mean_class_accuracy_per_label_base}, fairness measure F: {mean_F_base:.3f}')
             print(f'VGG model: mean emotion class-wise accuracy: {mean_class_accuracy_per_label_VGG}, fairness measure F: {mean_F_VGG:.3f}')
             print(f'VGG+SMOTE model: mean emotion class-wise accuracy: {mean_class_accuracies_smote}, fairness measure F: {F_smote:.3f}')
-            # print(f'VGG+TL-B with FER model: mean emotion class-wise accuracy: {mean_class_accuracies_TLB_FER}, fairness measure F: {F_TLB_FER:.3f}')
             print(f'VGG+TL-B with SFEW model: mean emotion class-wise accuracy: {mean_class_accuracies_TLB_SFEW}, fairness measure F: {F_TLB_SFEW:.3f}')
 
             # Prepare the data structures to hold mean and CI for different models
@@ -1246,7 +1185,6 @@ if __name__ == "__main__":
                 'Baseline': mean_prob_baseline,
                 'VGG': mean_prob_VGG,
                 'VGG+SMOTE': prob_smote,
-                # 'TL-B with FER': prob_TLB_FER,
                 'TL-B with SFEW': prob_TLB_SFEW
             }
 
@@ -1259,12 +1197,12 @@ if __name__ == "__main__":
             for label in labels:
                 plot_fairness_scores(mean_probabilities, ci_probabilities, emotion_labels, attribute, label)
 
-        # fairness_diff_label('gender', gender_labels)
+        fairness_diff_label('gender', gender_labels)
         fairness_diff_label('race', race_labels)
         fairness_diff_label('age', age_labels)
 
     elif args.mode == 'bias':
-        '''
+        # this part is to plot test accuracy and F1 score comparison for all models
         # plot the total test accuracy
         def total_test_acc(model_name):
             total_test_acc = np.load(f'algorithms/{model_name}_test_accuracy_32_30_0.0001.npy', allow_pickle=True)
@@ -1291,18 +1229,11 @@ if __name__ == "__main__":
                           test_acc_TL_B_FER]
         ci_VGG_lower = ci_VGG[0]
         ci_VGG_upper = ci_VGG[1]  # 0.8231479926354925
-        # ci_errors = [ci_baseline, ci_VGG, (0, 0), (0, 0)]
-        # lower_errors = [mean - ci[0] for mean, ci in zip(mean_test_accs[:2], ci_errors[:2])]
-        # upper_errors = [ci[1] - mean for mean, ci in zip(mean_test_accs[:2], ci_errors[:2])]
-        # asymmetric_errors = [lower_errors, upper_errors]
 
         # plot the total test accuracy for the six models (four methods)
         def plot_testacc_four():
             fig, ax = plt.subplots(figsize=fig_size)
-            # ax.errorbar(labels[:2], mean_test_accs[:2], yerr=asymmetric_errors, fmt='o', capsize=5,
-            #             label='Confidence interval', color='blue')
             ax.bar(labels, mean_test_accs, alpha=0.7, label='Test accuracy')
-            # ax.plot(labels, mean_test_accs, marker='o', linestyle='--', color='b', label='Test accuracy')
             ax.axhline(y=ci_VGG_lower, color='r', linestyle=':')
             ax.axhline(y=ci_VGG_upper, color='r', linestyle=':', label='95%-CI of VGG')
             ax.set_ylabel('Test accuracy')
@@ -1314,10 +1245,9 @@ if __name__ == "__main__":
             plt.show()
 
         plot_testacc_four()
-        '''
 
-        # '''
         # calculate the test accuracy per emotion for the six models (four methods)
+        # the function is to get the accuracy of baseline and VGG models
         def acc_per_emotion_normal(model_name):
             # Load and process the confusion matrices
             mean_cm = load_cm(model_name)
@@ -1339,7 +1269,7 @@ if __name__ == "__main__":
             ci = (ci_lower, ci_upper)
 
             return mean_diag, ci
-
+        # the function is to get the accuracy of SMOTE and TL models
         def acc_per_emotion_advanced(model_name, datatype=None):
             if model_name == 'SMOTE':
                 cm = np.load(f'algorithms/Smote_confusion_matrices_32_30_0.0001.npy')
@@ -1386,9 +1316,9 @@ if __name__ == "__main__":
             plt.savefig(f'results_figure/comparison_acc_per_emotion.pdf')
             plt.show()
 
-        # plot_accuracy_per_emotion(mean_acc_peremo_baseline, ci_baseline, mean_acc_peremo_VGG, ci_VGG,
-        #                           acc_peremo_smote, acc_peremo_TL_FER, acc_peremo_TL2_FER, acc_peremo_TL_B_FER,
-        #                           emotion_labels)
+        plot_accuracy_per_emotion(mean_acc_peremo_baseline, ci_baseline, mean_acc_peremo_VGG, ci_VGG,
+                                  acc_peremo_smote, acc_peremo_TL_FER, acc_peremo_TL2_FER, acc_peremo_TL_B_FER,
+                                  emotion_labels)
 
         # plot the accuracy of VGG+TL-A1 and VGG+TL-A2 model per emotion using FER2013 dataset
         def plot_cata_forgetting(labels):
@@ -1413,9 +1343,7 @@ if __name__ == "__main__":
             plt.show()
 
         plot_cata_forgetting(emotion_labels)
-        # '''
 
-        '''
         # calculate the F1-scores for models
         # load the files of the standard CNN model or VGG model
         def f1_normal(model_name, name):
@@ -1544,9 +1472,9 @@ if __name__ == "__main__":
 
         plot_f1()
         plot_f1_peremo()
-        '''
 
     elif args.mode == 'McNemar':
+        # apply the hypothesis test of McNemar's test to explore the difference between SMOTE and TL models
         '''
         # get the predicted file of VGG majority vote by 30 repetitions
         test_df = pd.read_csv('rafdb_test.csv')
@@ -1563,17 +1491,6 @@ if __name__ == "__main__":
         VGG_maj_pre = VGG_maj_df['majpredicted']
         true_labels = VGG_maj_df['Emotion']
         '''
-        # # choose the best-performing VGG model
-        # total_test_accuracy = np.load('algorithms/VGG_test_accuracy_32_30_0.0001.npy', allow_pickle=True)
-        # print(total_test_accuracy)
-        # max_test_accuracy = max(total_test_accuracy)
-        # max_index = list(total_test_accuracy).index(max_test_accuracy)
-        # print('The index of best-performing VGG model is: ', max_index)  # 4
-        # # load the prediction results of different models for RAF-DB dataset
-        # VGG_df = pd.read_csv('prediction_files/VGG_csv/rafdb_total_pred_VGG 12.csv')
-        # # get the predicted label of the best-performing VGG model
-        # VGG_df = VGG_df.set_index('Image').loc[test_image_names].reset_index()
-        # VGG_pre = VGG_df['Predicted']
 
         # get the names of test data and their true emotion labels
         test_data = pd.read_csv('rafdb_test.csv')
@@ -1597,10 +1514,10 @@ if __name__ == "__main__":
         TLB_SFEW_df = TLB_SFEW_df.set_index('Image').loc[test_image_names].reset_index()
         TLB_SFEW_pre = TLB_SFEW_df['Predicted']
 
-        # plot the 2*2 table for McNemar'test between VGG and VGG+SMOTE, VGG and VGG+TL-B
+        # plot the 2*2 table for McNemar'test between VGG+SMOTE and VGG+TL-B models
         # the implementation of VGG+TL-B model using two different dataset (FER2013 and SFEW)
         def McNemar_test(model1_pre, model2_pre, model1_name, model2_name):
-            # create 2*2 confusion matrix
+            # create 2*2 table
             n11 = np.sum((model1_pre == true_labels) & (model2_pre == true_labels))
             n01 = np.sum((model1_pre != true_labels) & (model2_pre == true_labels))
             n10 = np.sum((model1_pre == true_labels) & (model2_pre != true_labels))
@@ -1632,7 +1549,8 @@ if __name__ == "__main__":
         McNemar_test(TLB_FER_pre, TLB_SFEW_pre, 'VGG+TL-B with FER2013', 'VGG+TL-B with SFEW')
 
     elif args.mode == 'twodataset':
-        # plot the test accuracy
+        # this part is to compare the performance of VGG+TL models using different dataset (FER2013 and SFEW)
+        # get the test accuracy of VGG model (as the reference)
         def total_test_acc(model_name):
             total_test_acc = np.load(f'algorithms/{model_name}_test_accuracy_32_30_0.0001.npy', allow_pickle=True)
             mean_test_acc = np.mean(total_test_acc)
@@ -1645,11 +1563,12 @@ if __name__ == "__main__":
             ci = (ci_lower, ci_upper)
 
             return mean_test_acc, ci
+
         mean_test_acc_VGG, ci_VGG = total_test_acc('VGG')
         ci_VGG_lower = ci_VGG[0]
         ci_VGG_upper = ci_VGG[1]
 
-        # test accuracy of different models(VGG+TL) by using different dataset(FER and SFEW)
+        # test accuracy of different VGG+TL models by using different dataset(FER2013 and SFEW)
         test_acc_TL_FER = 0.767
         test_acc_TL2_FER = 0.783
         test_acc_TL_B_FER = 0.847
@@ -1687,7 +1606,7 @@ if __name__ == "__main__":
 
         compared_twodata()
 
-        # get the confusion matrix of VGG, VGG+TL-A1, VGG+TL-A2, VGG+TL-B under different dataset(FER and SFEW)
+        # get the confusion matrix of VGG(as reference)
         def acc_per_emotion_normal(model_name):
             # Load and process the confusion matrices
             mean_cm = load_cm(model_name)
@@ -1710,9 +1629,10 @@ if __name__ == "__main__":
             ci = (ci_lower, ci_upper)
 
             return mean_diag, ci
+
+        # get the confusion matrix of VGG+TL-A1, VGG+TL-A2, VGG+TL-B under different dataset(FER2013 and SFEW)
         def acc_per_emotion_advanced(model_name, datatype):
             cm = np.load(f'algorithms/TL_{datatype}/{model_name}_confusion_matrices.npy')
-
             normalized_cm = normalize(cm, 'true')
             acc_peremo = np.diag(normalized_cm)
 
@@ -1752,7 +1672,3 @@ if __name__ == "__main__":
         plot_accuracy_per_emotion('TL2', mean_acc_peremo_VGG, acc_peremo_TL2_FER, acc_peremo_TL2_SFEW, emotion_labels, title='VGG+TL-A2')
         plot_accuracy_per_emotion('TL_B', mean_acc_peremo_VGG, acc_peremo_TL_B_FER, acc_peremo_TL_B_SFEW,
                                   emotion_labels, title='VGG+TL-B')
-
-
-
-
