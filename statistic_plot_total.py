@@ -2,133 +2,137 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
 
-#### convert emotion txt file to csv file
-# column_names = ['image', 'emotion']
-#
-# df = pd.read_csv('EmoLabel/list_patition_label.txt', delim_whitespace=True, names=column_names)
-#
-# df.to_csv('emotion.csv', index=False)
+'''
+# convert emotion txt file to csv file
+column_names = ['image', 'emotion']
+df = pd.read_csv('EmoLabel/list_patition_label.txt', delim_whitespace=True, names=column_names)
+df.to_csv('emotion.csv', index=False)
+'''
 
+'''
+# Define the directory where the txt files are stored
+directory = 'manual/'
 
-#### Define the directory where the txt files are stored
-# directory = 'manual/'
-#
-# # Initialize a list to hold the extracted data
-# extracted_data = []
-#
-# # Loop over the files in the directory
-# for filename in sorted(os.listdir(directory)):
-#     if filename.endswith(".txt"):
-#         # Construct the full file path
-#         file_path = os.path.join(directory, filename)
-#         # Read the last three lines of the file
-#         with open(file_path, 'r') as file:
-#             lines = file.readlines()[-3:]  # Get the last three lines
-#             # Check if we have exactly three lines for gender, race, age
-#             if len(lines) == 3:
-#                 # Extract the gender, race, and age information
-#                 gender = lines[0].strip()
-#                 race = lines[1].strip()
-#                 age = lines[2].strip()
-#                 # Append the extracted data to the list
-#                 extracted_data.append([gender, race, age])
-#
-#
-# # Create a DataFrame from the extracted data
-# df_attributes = pd.DataFrame(extracted_data, columns=['gender', 'race', 'age'])
-#
-# df_attributes.to_csv('attributes_luan.csv', index=False)
+# Initialize a list to hold the extracted data
+extracted_data = []
 
+# Loop over the files in the directory
+for filename in sorted(os.listdir(directory)):
+    if filename.endswith(".txt"):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        # Read the last three lines of the file
+        with open(file_path, 'r') as file:
+            lines = file.readlines()[-3:]  # Get the last three lines
+            # Check if we have exactly three lines for gender, race, age
+            if len(lines) == 3:
+                # Extract the gender, race, and age information
+                gender = lines[0].strip()
+                race = lines[1].strip()
+                age = lines[2].strip()
+                # Append the extracted data to the list
+                extracted_data.append([gender, race, age])
 
-#### Load the CSV file using pandas
-# csv_file_path = 'attributes_luan.csv'
-# df = pd.read_csv(csv_file_path)
-#
-# # Split the DataFrame into two parts
-# first_part = df[:3068]
-# second_part = df[3068:]
-#
-# # Concatenate the second part with the first part
-# rearranged_df = pd.concat([second_part, first_part], ignore_index=True)
-#
-# # Save the rearranged DataFrame to a new CSV file
-# rearranged_csv_path = 'attributes.csv'
-# rearranged_df.to_csv(rearranged_csv_path, index=False)
+# Create a DataFrame from the extracted data
+df_attributes = pd.DataFrame(extracted_data, columns=['gender', 'race', 'age'])
+df_attributes.to_csv('attributes_luan.csv', index=False)
+'''
 
+'''
+# Load the CSV file using pandas
+csv_file_path = 'attributes_luan.csv'
+df = pd.read_csv(csv_file_path)
 
-#### Load both CSV files using pandas
-# attributes_csv_path = 'attributes.csv'
-# emotion_csv_path = 'emotion.csv'
-#
-# # Read the CSV files into DataFrames
-# attributes_df = pd.read_csv(attributes_csv_path)
-# emotion_df = pd.read_csv(emotion_csv_path)
-#
-# # Assuming both DataFrames have the same order and number of rows and can be joined row-wise
-# # We will concatenate them horizontally (side by side)
-# combined_df = pd.concat([emotion_df, attributes_df], axis=1)
-#
-# # Save the combined DataFrame to a new CSV file
-# combined_csv_path = 'total_attributes.csv'
-# combined_df.to_csv(combined_csv_path, index=False)
+# Split the DataFrame into two parts
+first_part = df[:3068]
+second_part = df[3068:]
 
+# Concatenate the second part with the first part
+rearranged_df = pd.concat([second_part, first_part], ignore_index=True)
 
-# file_path = 'rafdb.csv'
-# data = pd.read_csv(file_path)
-# data['Image'] = data['Image'].apply(lambda x: x.replace('.jpg', '_aligned.jpg'))
-#
-# new_file_path = 'rafdb_aligned.csv'
-# data.to_csv(new_file_path, index=False)
-#
-# train_data = data[data['Image'].str.contains('train')]
-# test_data = data[data['Image'].str.contains('test')]
-#
-# # print('train data number: ', train_data.shape[0])     # 11519
-# # print('test data number: ', test_data.shape[0])       # 2869
-#
-# base_path = 'aligned'
-# train_path = os.path.join(base_path, 'train')
-# test_path = os.path.join(base_path, 'test')
-#
-# os.makedirs(train_path, exist_ok=True)
-# os.makedirs(test_path, exist_ok=True)
-#
-# # move training images
-# for image_name in train_data['Image']:
-#     source = os.path.join(base_path, image_name)
-#     destination = os.path.join(train_path, image_name)
-#     shutil.move(source, destination)
-#
-# # move test images
-# for image_name in test_data['Image']:
-#     source = os.path.join(base_path, image_name)
-#     destination = os.path.join(test_path, image_name)
-#     shutil.move(source, destination)
+# Save the rearranged DataFrame to a new CSV file
+rearranged_csv_path = 'attributes.csv'
+rearranged_df.to_csv(rearranged_csv_path, index=False)
+'''
 
-# def ensure_dir(directory):
-#     if not os.path.exists(directory):
-#         os.makedirs(directory)
-#
-# # 分类图像到对应的Emotion子文件夹
-# def sort_images_to_folders(data, base_dir):
-#     for index, row in data.iterrows():
-#         source = os.path.join(base_dir, row['Image'])
-#         emotion_folder = os.path.join(base_dir, str(row['Emotion']))
-#         ensure_dir(emotion_folder)
-#
-#         # build target path
-#         destination = os.path.join(emotion_folder, row['Image'].split('/')[-1])
-#
-#         # move files
-#         if os.path.exists(source):
-#             shutil.move(source, destination)
-#         else:
-#             print(f"File not found: {source}")
-#
-# sort_images_to_folders(data[data['Image'].str.contains('train')], train_path)
-# sort_images_to_folders(data[data['Image'].str.contains('test')], test_path)
+'''
+# Load both CSV files using pandas
+attributes_csv_path = 'attributes.csv'
+emotion_csv_path = 'emotion.csv'
 
+# Read the CSV files into DataFrames
+attributes_df = pd.read_csv(attributes_csv_path)
+emotion_df = pd.read_csv(emotion_csv_path)
+
+# Assuming both DataFrames have the same order and number of rows and can be joined row-wise
+# We will concatenate them horizontally (side by side)
+combined_df = pd.concat([emotion_df, attributes_df], axis=1)
+
+# Save the combined DataFrame to a new CSV file
+combined_csv_path = 'total_attributes.csv'
+combined_df.to_csv(combined_csv_path, index=False)
+'''
+
+'''
+file_path = 'rafdb.csv'
+data = pd.read_csv(file_path)
+data['Image'] = data['Image'].apply(lambda x: x.replace('.jpg', '_aligned.jpg'))
+
+new_file_path = 'rafdb_aligned.csv'
+data.to_csv(new_file_path, index=False)
+
+train_data = data[data['Image'].str.contains('train')]
+test_data = data[data['Image'].str.contains('test')]
+
+# print('train data number: ', train_data.shape[0])     # 11519
+# print('test data number: ', test_data.shape[0])       # 2869
+
+base_path = 'aligned'
+train_path = os.path.join(base_path, 'train')
+test_path = os.path.join(base_path, 'test')
+
+os.makedirs(train_path, exist_ok=True)
+os.makedirs(test_path, exist_ok=True)
+
+# move training images
+for image_name in train_data['Image']:
+    source = os.path.join(base_path, image_name)
+    destination = os.path.join(train_path, image_name)
+    shutil.move(source, destination)
+
+# move test images
+for image_name in test_data['Image']:
+    source = os.path.join(base_path, image_name)
+    destination = os.path.join(test_path, image_name)
+    shutil.move(source, destination)
+
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+# Sort images into corresponding Emotion subfolders
+def sort_images_to_folders(data, base_dir):
+    for index, row in data.iterrows():
+        source = os.path.join(base_dir, row['Image'])
+        emotion_folder = os.path.join(base_dir, str(row['Emotion']))
+        ensure_dir(emotion_folder)
+
+        # build target path
+        destination = os.path.join(emotion_folder, row['Image'].split('/')[-1])
+
+        # move files
+        if os.path.exists(source):
+            shutil.move(source, destination)
+        else:
+            print(f"File not found: {source}")
+
+sort_images_to_folders(data[data['Image'].str.contains('train')], train_path)
+sort_images_to_folders(data[data['Image'].str.contains('test')], test_path)
+'''
+
+# Plot settings
 SMALL_SIZE = 12
 MEDIUM_SIZE = 14
 BIGGER_SIZE = 16
@@ -146,10 +150,8 @@ title_font = {'size':BIGGER_SIZE, 'color':'black', 'weight':'normal'} # Bottom v
 
 
 '''
-Plot the 4 mixture figures about emotion, gender, race, and age distributions
-
+Plot the 4 figures about emotion, gender, race, and age distributions
 '''
-
 # Load the CSV file into a DataFrame
 rafdb_data = pd.read_csv('rafdb_aligned.csv')
 
@@ -262,66 +264,9 @@ for i in range(1, 8):
 
 
 '''
-Plot the bar figures that show the number of each label of one attribute based on another attribute
-eg. x: gender, y: number, height of bar is the number of three different races based on male or female
+Plot the bar figures that show the number of combined attributes based on one sensitive attribute
+eg. x: gender, y: number, height of bar is the number of combined race and age based on male
 '''
-# # race and age mixture based on gender, give two figures for male and female
-# # same based on race or age
-# def plot_separate_attributes_by_primary(data, primary_attribute, secondary_attributes, primary_labels, secondary_labels):
-#     # Loop over each primary attribute key defined in primary_labels
-#     for primary_key, primary_name in primary_labels.items():
-#         # Filter data for the current primary attribute value
-#         primary_data = data[data[primary_attribute] == primary_key]
-#
-#         # Calculate combinations of secondary attributes
-#         combinations = primary_data[secondary_attributes].drop_duplicates().sort_values(by=secondary_attributes).values
-#         color_map = plt.cm.get_cmap('viridis', len(combinations))
-#
-#         # Create a color for each combination
-#         colors = [color_map(i) for i in range(len(combinations))]
-#
-#         # Mapping for legend labels
-#         legend_labels = [' & '.join([secondary_labels[attr][val] for attr, val in zip(secondary_attributes, comb)]) for comb in combinations]
-#
-#         # Plot setup
-#         # fig, ax = plt.subplots(figsize=fig_size)
-#         fig, ax = plt.subplots(figsize=(12, 6))
-#         width = 0.35
-#         positions = [i for i in range(len(combinations))]
-#         total_counts = primary_data.shape[0]  # Total counts for the current primary attribute value
-#
-#         # Plot each combination
-#         for idx, (comb, color, label) in enumerate(zip(combinations, colors, legend_labels)):
-#             # Filter data for specific combination
-#             mask = True
-#             for attr, val in zip(secondary_attributes, comb):
-#                 mask &= (primary_data[attr] == val)
-#             filtered_data = primary_data[mask]
-#
-#             # Calculate the percentage
-#             count = filtered_data.shape[0]
-#             percentage = (count / total_counts) * 100 if total_counts > 0 else 0
-#
-#             # Plot bar
-#             ax.bar(idx, percentage, width, color=color, label=label)
-#
-#         # Final plot adjustments
-#         ax.set_title(f'Percentages for {primary_attribute} ({primary_name}) with Combined {secondary_attributes[0]} and {secondary_attributes[1]} Categories', fontdict=title_font)
-#         ax.set_ylabel('Percentage (%)')
-#         ax.set_xticks(positions)
-#         ax.set_xticklabels(legend_labels, rotation=45, ha="right")
-#         ax.legend(title='Combination', bbox_to_anchor=(1.05, 1), loc='upper left')
-#
-#         plt.tight_layout()
-#         # plt.savefig(f'figure/base_{primary_name}_mix_two.pdf')
-#         plt.show()
-#
-# # plot_separate_attributes_by_primary(rafdb_data, 'Gender', ['Race', 'Age'], gender_map, {'Race': race_map, 'Age': age_map})
-# # plot_separate_attributes_by_primary(rafdb_data, 'Race', ['Gender', 'Age'], race_map, {'Gender': gender_map, 'Age': age_map})
-# # plot_separate_attributes_by_primary(rafdb_data, 'Age', ['Gender', 'Race'], age_map, {'Gender': gender_map, 'Race': race_map})
-
-
-
 # similar grouped bars in one place
 def custom_sort_gender(comb, secondary_labels):
     age_priority = {'0-3': 0, '4-19': 1, '20-39': 2, '40-69': 3, '70+': 4}
