@@ -15,7 +15,7 @@ Age (5 ranges): 0: 0-3, 1: 4-19,	2: 20-39,	3: 40-69,	4: 70+.
 ### The standard CNN model and VGG model
 We use a simple CNN architecture and a VGG architecture to train and get 30 models respectively. we call these two models, the standard CNN model and VGG model.
 In **'algorithms'** folder, these two trained model files are in **'baseline'** and **'VGG'** folders each.
-The two **'.npy' files under the name 'Adam'** contain confusion matrices and test accuracies for 30 standard CNN models, and **two '.npy' files under the name 'VGG'** include those of 30 VGG models.
+The two **'.npy' files under the name 'Adam'** contain confusion matrices and test accuracies for 30 standard CNN models, and two **'.npy' files under the name 'VGG'** include those of 30 VGG models.
 
 ### SMOTE application
 The application of SMOTE is useful for improving model fairness. 
